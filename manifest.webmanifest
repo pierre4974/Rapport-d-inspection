@@ -1,0 +1,1 @@
+{"name":"InspectPro — Inspections hors ligne","short_name":"InspectPro","description":"Rapports d'inspection et photos conservés sur cet appareil","start_url":"./","scope":"./","display":"standalone","background_color":"#f5f7fb","theme_color":"#10283f","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
