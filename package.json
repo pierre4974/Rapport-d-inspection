@@ -1,6 +1,0 @@
-{
-  "name": "inspectpro", "version": "1.0.0", "private": true, "type": "module",
-  "scripts": {"dev":"vite --host 0.0.0.0", "build":"vite build", "preview":"vite preview --host 0.0.0.0"},
-  "dependencies": {"vite":"^6.3.0", "jspdf":"^3.0.1", "idb":"^8.0.3"},
-  "devDependencies": {}
-}
