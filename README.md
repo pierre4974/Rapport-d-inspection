@@ -1,58 +1,77 @@
-# InspectPro — application de rapports d'inspection
+# InspectPro — inspections locales, même sans Internet
 
-Application web responsive en français permettant de créer des inspections (usine, dortoir, etc.), ajouter des signalements avec photos, générer un PDF et consulter l'historique.
+Application en français pour créer des rapports d'inspection d'usine, de dortoir ou de catégories personnalisées depuis un téléphone ou un ordinateur.
 
-## Installation locale
+## Fonctionnalités
 
-Prérequis : Node.js 20.19+ ou 22.12+ et npm.
+- Catégories de rapports personnalisables
+- Plusieurs signalements par inspection : localisation, gravité, description, actions recommandées
+- Photos prises avec l'appareil photo ou choisies depuis la galerie
+- Rapports PDF téléchargeables, avec photos
+- Historique local, recherche et modification de rapports
+- Stockage local sur le téléphone (IndexedDB) ; aucun compte, aucune base de données cloud
+- Application web installable (PWA) et cache des fichiers pour fonctionnement hors connexion **après un premier chargement en ligne réussi**
+- Sauvegarde complète JSON (rapports, photos, catégories), à exporter dans les fichiers du téléphone
+- Import d'une sauvegarde JSON (fusion avec les rapports existants)
+
+## Tester le projet sur ordinateur
+
+Installer Node.js 20.19+ ou 22.12+ et npm :
 
 ```bash
 npm install
 npm run dev
 ```
 
-Ouvrez l'adresse affichée dans le terminal (généralement http://localhost:5173).
+Ouvrez l'URL locale affichée. **Le mode hors connexion PWA fonctionne dans la version construite, pas dans le serveur de développement**. Pour le tester :
 
-## Mettre le projet sur GitHub
+```bash
+npm run build
+npm run preview
+```
 
-1. Créez un dépôt GitHub vide, par exemple `inspectpro`.
-2. Décompressez le ZIP, puis ouvrez un terminal dans le dossier `inspectpro`.
-3. Exécutez :
+Le site doit être servi en HTTPS (ou localhost) pour installer un service worker.
+
+## Mettre sur GitHub
+
+Créez un dépôt `inspectpro` sur GitHub, puis importez **le contenu de ce dossier**. Exemple en ligne de commande :
 
 ```bash
 git init
 git add .
-git commit -m "Première version InspectPro"
+git commit -m "InspectPro local et hors ligne"
 git branch -M main
-git remote add origin https://github.com/VOTRE-NOM/inspectpro.git
+git remote add origin https://github.com/VOTRE-IDENTIFIANT/inspectpro.git
 git push -u origin main
 ```
 
-Remplacez `VOTRE-NOM` par votre identifiant GitHub.
+## Mettre en ligne, puis installer sur téléphone
 
-## Publier en ligne
+Il faut une connexion Internet pour le **premier accès** et pour les mises à jour du code. Ensuite, les inspections et les PDF sont créés localement. Publiez le site sur un hébergement statique HTTPS, par exemple Vercel ou Netlify, en connectant le dépôt GitHub :
 
-Pour Vercel ou Netlify, importez le dépôt GitHub. Commande de build : `npm run build` ; dossier de sortie : `dist`. Le site utilise Vite.
+- Commande de build : `npm run build`
+- Dossier publié : `dist`
 
-## Fonctionnalités
+Sur **Android** : ouvrir le site dans Chrome puis menu → « Ajouter à l'écran d'accueil » ou « Installer l'application » (si proposé).
 
-- Catégories d'inspection personnalisables
-- Fiches d'inspection : site, date, inspecteur et notes
-- Plusieurs anomalies par rapport : titre, localisation, gravité, description, action corrective
-- Plusieurs photos par anomalie (caméra ou galerie selon l'appareil)
-- PDF téléchargeable avec images et pagination
-- Historique consultable, recherche, réouverture et suppression
-- Fonctionnement sans compte, données enregistrées localement via IndexedDB
+Sur **iPhone** : ouvrir le site dans Safari puis Partager → « Sur l'écran d'accueil ».
 
-## Limites importantes de cette version
+Ouvrir l'application une fois avec Internet, puis vérifier le fonctionnement en mode avion. Certaines versions de navigateur peuvent limiter l'installation ou le fonctionnement hors connexion. L'application n'est pas un fichier APK / une application native.
 
-**Les rapports sont enregistrés dans le navigateur de l'appareil**, pas sur GitHub ni sur un serveur. Ils ne se synchronisent pas entre appareils et peuvent être perdus si les données du navigateur sont effacées. Faites régulièrement des exports PDF. Il n'y a pas encore de connexion utilisateur, de partage entre inspecteurs, de sauvegarde cloud, ni de véritable mode hors connexion garanti. Pour un usage professionnel en équipe, il faudra ajouter une base de données et un stockage d'images sécurisés (par exemple Supabase), ainsi qu'une authentification et des sauvegardes.
+## Où sont les données ?
 
-La génération PDF utilise les polices standard de jsPDF, qui peuvent afficher imparfaitement certains caractères Unicode. Les photos volumineuses peuvent occuper beaucoup d'espace sur l'appareil.
+Les rapports et photos sont stockés dans **IndexedDB dans le navigateur sur cet appareil**. Ils ne sont **pas enregistrés dans le dépôt GitHub**, et ils ne sont pas synchronisés avec un serveur. Le stockage peut être perdu en cas de réinitialisation du navigateur, de nettoyage des données, de désinstallation ou de panne de l'appareil. L'espace disponible dépend du téléphone et du navigateur. Les fichiers PDF sont enregistrés séparément lorsque vous les téléchargez.
+
+**Il faut exporter régulièrement une sauvegarde JSON depuis le menu « Sauvegardes » et conserver le fichier hors de l'application.** Pour récupérer vos rapports, utiliser « Restaurer une sauvegarde ». Une sauvegarde peut contenir des photos sensibles : protégez vos fichiers et votre appareil.
+
+## Limitations
+
+- Ni synchronisation multi-appareils, ni authentification, ni stockage cloud.
+- Le stockage local des navigateurs n'est pas une garantie de conservation permanente ; un export régulier reste indispensable.
+- Les fichiers JSON contenant de nombreuses photos peuvent être volumineux et difficiles à importer sur certains téléphones.
+- Les polices PDF standard peuvent mal représenter certains caractères spéciaux.
+- Le mode hors connexion nécessite une première installation avec accès Internet et un navigateur compatible.
 
 ## Technologies
 
-- JavaScript + Vite
-- IndexedDB via `idb`
-- `jspdf` pour les PDF
-- CSS responsive, sans framework d'interface
+JavaScript, Vite, IndexedDB avec `idb`, jsPDF, service worker local et manifest PWA.

@@ -8,3 +8,10 @@ export async function saveReport(report) {return (await database).put('reports',
 export async function removeReport(id) {return (await database).delete('reports',id);}
 export async function getCategories() {const row=await (await database).get('settings','categories');return row?.value ?? ['Inspection d’usine','Inspection de dortoir','Inspection générale'];}
 export async function saveCategories(value) {return (await database).put('settings',{key:'categories',value});}
+export async function importData(importedReports, categories) {
+  const db = await database;
+  const tx = db.transaction(['reports','settings'],'readwrite');
+  for (const report of importedReports) await tx.objectStore('reports').put(report);
+  await tx.objectStore('settings').put({key:'categories',value:categories});
+  await tx.done;
+}
