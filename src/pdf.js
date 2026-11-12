@@ -1,32 +1,17 @@
 import {jsPDF} from 'jspdf';
-const safe = s => String(s??'').trim();
-const wrap = (doc,text,x,y,width,line=5) => {const lines=doc.splitTextToSize(safe(text)||'—',width);doc.text(lines,x,y);return y+lines.length*line;};
-async function imageData(file){
-  if(!file) return null;
-  const url=URL.createObjectURL(file);
-  try {const img=await new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=reject;i.src=url;});
-    const max=1300,scale=Math.min(1,max/Math.max(img.width,img.height));
-    const canvas=document.createElement('canvas');canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);
-    canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-    return {data:canvas.toDataURL('image/jpeg',0.78),w:canvas.width,h:canvas.height};
-  } finally {URL.revokeObjectURL(url);}
-}
+const safe=s=>String(s??'').trim()||'—';
+const lines=(doc,text,width,max)=>{const all=doc.splitTextToSize(safe(text),width);return all.length>max?[...all.slice(0,max-1),all[max-1].slice(0,Math.max(0,all[max-1].length-1))+'…']:all;};
+async function imageData(blob){if(!(blob instanceof Blob))return null;const url=URL.createObjectURL(blob);try{const image=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=url;});const scale=Math.min(1,850/Math.max(image.width,image.height));const canvas=document.createElement('canvas');canvas.width=Math.round(image.width*scale);canvas.height=Math.round(image.height*scale);canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);return {data:canvas.toDataURL('image/jpeg',.74),w:canvas.width,h:canvas.height};}finally{URL.revokeObjectURL(url);}}
+function heading(doc,label){doc.setFillColor(16,40,63);doc.rect(0,0,210,20,'F');doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(255);doc.text('INSPECTPRO',15,13);doc.setTextColor(29,43,59);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.text(label,195,13,{align:'right'});}
+function coverField(doc,label,value,y){doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(78,99,116);doc.text(label.toUpperCase(),20,y);doc.setFont('helvetica','normal');doc.setTextColor(25,41,55);doc.setFontSize(13);const wrapped=lines(doc,value,168,4);doc.text(wrapped,20,y+9);return y+Math.max(19,wrapped.length*7+13);}
+function cellText(doc,label,value,x,y,width,max=2){doc.setFont('helvetica','bold');doc.setFontSize(7.6);doc.setTextColor(75,88,101);doc.text(label,x,y);doc.setFont('helvetica','normal');doc.setTextColor(30,43,57);doc.text(lines(doc,value,width,max),x,y+4);}
 export async function downloadPDF(report){
-  const doc=new jsPDF({unit:'mm',format:'a4'});const margin=18;const usable=174;let y=20;
-  function header(){doc.setFillColor(16,40,63);doc.rect(0,0,210,27,'F');doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(255);doc.text('INSPECTPRO',18,17);doc.setTextColor(28,42,56);doc.setFontSize(10);y=38;}
-  function room(h){if(y+h>277){doc.addPage();header();}}
-  function field(label,value){room(17);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(label,margin,y);y+=5;doc.setFont('helvetica','normal');y=wrap(doc,value,margin,y,usable,5)+5;}
-  header();doc.setFont('helvetica','bold');doc.setFontSize(17);doc.text('Rapport d’inspection',margin,y);y+=12;
-  field('Référence',report.id.slice(0,8).toUpperCase());field('Type de rapport',report.type);field('Site / bâtiment',report.site);field('Date de l’inspection',report.date);field('Inspecteur',report.inspector);field('Remarques générales',report.notes);
-  room(20);y+=4;doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text(`Signalements (${report.issues.length})`,margin,y);y+=10;
-  for(let idx=0;idx<report.issues.length;idx++){
-    const issue=report.issues[idx];room(45);doc.setFillColor(236,242,247);doc.rect(margin,y-5,usable,9,'F');doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text(`${idx+1}. ${safe(issue.title)||'Anomalie'}`.slice(0,80),margin+3,y+1);y+=13;
-    field('Localisation',issue.location);field('Gravité',issue.severity);field('Description',issue.description);field('Action recommandée',issue.action);
-    for(const photo of issue.photos||[]){
-      try{const image=await imageData(photo);if(!image)continue;const w=Math.min(usable,100);const h=Math.min(75,w*image.h/image.w);room(h+10);doc.addImage(image.data,'JPEG',margin,y,w,h);y+=h+10;}catch(e){console.warn('Photo ignorée',e);}
-    }
-    y+=5;
-  }
-  const pages=doc.getNumberOfPages();for(let p=1;p<=pages;p++){doc.setPage(p);doc.setFontSize(9);doc.setTextColor(120);doc.text(`Page ${p} / ${pages}`,190,288,{align:'right'});}
-  doc.save(`inspection-${report.date}-${report.id.slice(0,8)}.pdf`);
+ const doc=new jsPDF({unit:'mm',format:'a4',compress:true});const issues=report.issues||[];heading(doc,'RAPPORT D’INSPECTION');doc.setFont('helvetica','bold');doc.setTextColor(16,40,63);doc.setFontSize(29);doc.text('Rapport d’inspection',20,48);doc.setFontSize(17);doc.setTextColor(55,84,108);doc.text(lines(doc,report.type,168,2),20,62);doc.setDrawColor(212,224,233);doc.line(20,75,190,75);let y=89;
+ for(const [name,value] of [['Référence',report.id?.slice(0,8)?.toUpperCase()],['Site / bâtiment',report.site],['Date',report.date],['Inspecteur',report.inspector],['Statut',report.status==='completed'?'Inspection terminée':'Brouillon'],['Anomalies',`${issues.length} au total · ${issues.filter(i=>!i.resolved).length} non corrigée(s)`],['Remarques générales',report.notes]]){y=coverField(doc,name,value,y);if(y>275)break;}
+ for(let start=0;start<issues.length;start+=6){doc.addPage();heading(doc,`ANOMALIES ${start+1}–${Math.min(start+6,issues.length)}`);for(let n=0;n<6&&start+n<issues.length;n++){const issue=issues[start+n];const col=n%2,row=Math.floor(n/2),x=12+col*94,y0=28+row*85,w=90,h=81;doc.setDrawColor(211,223,232);doc.setFillColor(248,250,252);doc.roundedRect(x,y0,w,h,2,2,'FD');doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(22,47,67);doc.text(lines(doc,`${start+n+1}. ${safe(issue.title)}`,w-7,2),x+3,y0+6);doc.setFontSize(7);doc.setTextColor(issue.resolved?31:159,issue.resolved?122:89,issue.resolved?67:40);doc.text(issue.resolved?'✓ VALIDÉE':'À CORRIGER',x+w-3,y0+16,{align:'right'});
+ const photo=issue.photos?.[0];if(photo){try{const image=await imageData(photo);if(image){const maxW=39,maxH=43,ratio=Math.min(maxW/image.w,maxH/image.h),iw=image.w*ratio,ih=image.h*ratio;doc.addImage(image.data,'JPEG',x+3+(maxW-iw)/2,y0+18+(maxH-ih)/2,iw,ih);}}catch{}}
+ const tx=x+46,tw=w-49;cellText(doc,'Localisation',issue.location,tx,y0+24,tw,2);cellText(doc,'Gravité',issue.severity,tx,y0+40,tw,1);cellText(doc,'Action',issue.action,tx,y0+53,tw,2);cellText(doc,'Description',issue.description,x+3,y0+68,w-6,2);
+ }}
+ const count=doc.getNumberOfPages();for(let p=1;p<=count;p++){doc.setPage(p);doc.setFontSize(8);doc.setTextColor(125);doc.text(`Page ${p} / ${count}`,195,289,{align:'right'});}
+ doc.save(`inspection-${report.date}-${report.id.slice(0,8)}.pdf`);
 }
