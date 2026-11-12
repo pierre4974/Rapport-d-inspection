@@ -22,4 +22,4 @@ function offlineWorker() {
     await writeFile(join(dir,'sw.js'),source);
   }};
 }
-export default defineConfig({base:'./',plugins:[offlineWorker()]});
+export default defineConfig({base:'/Rapport-d-inspection/',plugins:[offlineWorker()]});
