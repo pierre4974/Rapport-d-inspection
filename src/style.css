@@ -6,3 +6,11 @@
 @media(max-width:650px){.history-tools{grid-template-columns:1fr}.history-stats{gap:7px}.history-stats .stat{padding:10px}.history-stats .stat strong{font-size:24px}.issue-progress{gap:7px}.issue-progress>div{padding:12px}.issue-thumbs img{width:78px;height:66px}.welcome-copy{font-size:13px}}
 
 .photo-error {display:inline-flex;align-items:center;justify-content:center;background:#fff0ed;color:#a14228;border:1px dashed #d9a69d;border-radius:8px;padding:8px;font-size:12px;min-height:40px;min-width:85px;}
+
+/* iPhone / Safari : évite le zoom automatique lors du focus dans les champs.
+   Ne bloque pas le zoom manuel (accessibilité). */
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px;
+  }
+}
